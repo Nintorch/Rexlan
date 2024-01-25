@@ -1,0 +1,151 @@
+TODOS:
+    AST
+    Ability to evaluate constant expressions at compile time
+    Simplify some expressions with compile-time evaluation
+
+Reference:
+    underlying type: void*
+    reference-counted - freed if refcount == 0
+Reference casted to bool: ref != null
+
+All classes' instances are references, like in Java and C#.
+There are 2 registers: d0, d1.
+
+-- Built-in types
+
+    byte, int8, bool - 1 byte, signed char
+    short, int16 - 2 bytes, signed short
+    long, int, int32 - 4 bytes, signed long
+    int64 - 8 bytes, signed long long
+
+    if unicode is enabled: char - 2 bytes (UTF16)
+    else: char - 1 byte (ASCII)
+
+    double, float
+
+-- Arrays (to be rewritten)
+Array objects are references
+declared like this:
+    int arr[]; // arr == null
+
+Array can be set up several ways:
+Empty array with length defined in declaration:
+    int arr[10]; // arr != null
+Empty array using 'new':
+    int arr[] = new int[10];
+Referencing the other array:
+    int arr[] = somearray;
+
+Array's properties and methods:
+    arr.length - get length of the array
+    arr[i] - get the value from position i
+        (0-indexed, throws error if out of bounds)
+
+
+-- Functions
+
+// Immutable function, uses call to direct address
+void test(int a, int b = 10)
+{
+
+}
+
+test(1, b: 2);
+
+// Mutable function, first we get the function address from that variable at runtime and call it
+// syntactic ""sugar"" for
+//      function<void(int)> test2 = () -> {};
+mutable void test2(int b)
+{
+
+}
+
+/* test2 = some lambda with exact same argument list (names not included) and return type */;
+
+test2 = (b) => {};
+test2(10);
+
+
+void test3(function<void(int)> f, int b)
+{
+    f(b);
+}
+
+test3(test, 10);
+
+// Inline function, made for optimizations
+inline int test4(int b)
+{
+    return 13 + some_function(b);
+}
+
+// Will evaluate to "int a = 13 + some_function(5);" at compile time,
+// no direct calls to test4 would be done
+int a = test4(5);
+
+function<int(int)> f2 = test4;
+f2(5); // direct call WILL PROBABLY be done
+
+-- Strings
+Strings use UTF16
+
+string a = "Привет";
+string b = a + " мир";
+string c = "Yo" * 30;
+char d = c[0];
+
+Behind the scene it's a class with methods, properties and overloaded operators
+
+Strings can be interpolated
+
+string e = $"Hello {a}"; // "Hello Привет";
+// syntactic sugar for string.format("Hello {}", a);
+
+string[] split = e.split(); // space as default argument
+
+-- Classes
+
+class String
+{
+public:
+    String(int len) {}
+
+    String[] split(char separator=' ') {}
+
+    String operator +(String b) {}
+private:
+    char[] data;
+protected:
+    int len;
+}
+
+String a(10); // initialized
+String b = new String(10); // same as above
+String c = null; // not initialized
+
+String[] d = a.split();
+char[] data = a.data; // error: 'data' property is not accessible (it's private)
+
+class AdvancedString : String
+{
+    int advanced_part; // private by default
+}
+
+AdvancedString e();
+e.split();
+
+-- Attributes
+Attributes from Python
+
+function<void(string)> route(function<void()> f, string name)
+{
+    return (s) => f();
+}
+
+@route("test")
+void test()
+{
+
+}
+
+test("Hello world"); // calls modified version of test (returned from attribute)
